@@ -1,0 +1,132 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+body,
+html {
+    height: 100%;
+    /* Ensure body and HTML take full height */
+    margin: 0;
+    /* Remove default margin */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    /* Optional background for better contrast */
+}
+
+.calculator {
+    width: 90%;
+    /* 90% of the screen width for responsiveness */
+    max-width: 440px;
+    /* Set max width to maintain layout on large screens */
+    margin: 0 auto;
+    /* Center the element horizontally */
+    // padding: 20px; /* Adjust padding for content */
+    border: 1px solid #717377;
+    border-radius: 20px;
+
+    box-shadow: 0px 3px 15px rgba(113, 115, 119, 0.5);
+}
+
+.fire,
+.aim {
+    border-radius: 50%;
+    /* Keeps the buttons circular */
+    width: 15vw;
+    /* 15% of the viewport width */
+    height: 15vw;
+    /* Keep height equal to width for perfect circles */
+    max-width: 80px;
+    /* Prevents buttons from becoming too large */
+    max-height: 80px;
+    min-width: 50px;
+    /* Ensure they don’t get too small */
+    min-height: 50px;
+    transition: opacity 0.5s ease-in-out;
+
+    /* Center text/content inside the buttons if needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(1rem + 0.5vw);
+    /* Dynamic font size */
+}
+
+/* Fire Button Specific Styles */
+.fire {
+    background: rgba(34, 33, 33, 0.438);
+    border: 5px solid transparent;
+    /* Placeholder for the borders */
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(151, 161, 154);
+    border-top-color: rgb(5, 223, 121);
+    border-bottom-color: rgb(154, 165, 157);
+}
+
+/* Aim Button Specific Styles */
+.aim {
+    background: rgba(34, 33, 33, 0.548);
+    box-shadow: 3px 3px rgba(25, 26, 26, 0.26);
+}
+
+// .calculator {
+//   transition: opacity 0.5s ease-in-out;
+//   // width:0px;
+//   width: 428px;
+//   margin-left: 9cm;
+//   // margin-top: 3cm;
+//   // height:0px;
+//   border: 1px solid #717377;
+//   // padding:200px;
+//   border-radius: 20px;
+//   background-color: rgba(1, 63, 44, 0.507);
+//   opacity: 0;
+//   box-shadow: 0px 3px 15px rgba(113, 115, 119, 0.5);
+// }
+
+input {
+    // height:0px;
+    width: 425px;
+    border: none;
+    border-radius: 19%;
+    // margin:10px;
+    background: rgb(49, 71, 61);
+    box-shadow: 0px 3px 15px rgba(84, 84, 84, 0.1);
+    font-size: 15px;
+    text-align: right;
+    cursor: pointer;
+    color: #ffffff;
+}
+
+input::placeholder {
+    color: #ffffff;
+}
+
+button {
+    // height:0px;
+    border: none;
+    width: 57px;
+    // width:0px;
+    background: rgb(28, 39, 34);
+    height: 30px;
+
+}
+
+.matrix {
+    border-spacing: 6px;
+    border-collapse: separate;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+
+    td {
+        border-radius: 50%;
+        padding: 13px;
+        background-color: green;
+    }
+
+    .fired {
+        background-color: red;
+    }

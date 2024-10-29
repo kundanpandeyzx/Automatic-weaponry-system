@@ -1,0 +1,373 @@
+import { HttpClient } from '@angular/common/http';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { JoystickEvent } from 'ngx-joystick';
+import { JoystickManagerOptions, JoystickOutputData } from 'nipplejs';
+import {
+  Subject,
+  Subscription,
+  distinctUntilChanged,
+  filter,
+  finalize,
+  firstValueFrom,
+  map,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
+import { wait } from '../shared/fun';
+import { VideState, VideoService } from './video.service';
+
+const apiDomain = '';
+
+@Component({
+  selector: 'app-mark-fire',
+  templateUrl: './mark-fire.component.html',
+  styleUrls: ['./mark-fire.component.scss'],
+})
+export class MarkFireComponent implements OnInit, OnDestroy {
+  @ViewChild('inputElement', { static: true }) inputRef!: ElementRef;
+  @ViewChild('targetButton') targetButton: ElementRef;
+
+  // string: string = 'Hello, world!';
+  string: string = '';
+  get input(): HTMLInputElement {
+    return this.inputRef.nativeElement as HTMLInputElement;
+  }
+
+  opaci: number = 0;
+  opac: number = 0;
+  transp: number = 0;
+  tansparancey = false;
+  range: string = '';
+  newRange: number = 0;
+  // input = document.getElementById('text');
+  buttons = document.querySelectorAll('button');
+
+  arr = Array.from(this.buttons);
+
+  fire: boolean = true;
+  unlock: boolean = false;
+  recording: boolean = false;
+  place: string = 'Locked';
+  placee: string = 'Record';
+  message: string;
+  @ViewChild('video', { static: true }) private video: ElementRef;
+  @ViewChild('downloadLink', { static: true }) private downloadLink: ElementRef;
+  private mediaRecorder: MediaRecorder;
+  private recordedChunks: Blob[] = [];
+  public recordingStatus: string = '';
+  private videoState$ = new Subject<VideState>();
+  private subscriptions: Subscription[] = [];
+  public fps!: number;
+  private webcam$Subscription!: { state: VideState; destroy: () => void };
+  directionStatic: string;
+  interactingStatic1: boolean;
+  interactingStatic: boolean;
+  staticOutputData: JoystickOutputData;
+  staticOutputData1: JoystickOutputData;
+  motorDirection: string;
+  status = true;
+  ledMatrix = [
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+  ];
+  initial = 0;
+
+  move$ = new Subject();
+  move1$ = new Subject();
+  start$ = new Subject();
+  start1$ = new Subject();
+  stop$ = new Subject();
+  stop1$ = new Subject();
+  staticOptions: JoystickManagerOptions = {
+    mode: 'static',
+    position: { left: '50%', top: '50%' },
+    color: 'blue',
+  };
+  staticOptions1: JoystickManagerOptions = {
+    mode: 'static',
+    position: { left: '50%', top: '50%' },
+    color: 'green',
+  };
+  isFullScreen = false;
+  intervalId: any = 5;
+
+  constructor(
+    private readonly videoService: VideoService,
+    private readonly http: HttpClient
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    // const video: HTMLVideoElement = this.video.nativeElement;
+    // await this.setupCamera(video);
+    // console.log(video.videoWidth, video.videoHeight);
+    this.subscriptions['joystick#move1'] = this.start1$
+      .pipe(
+        switchMap(() => {
+         
+              console.log('final');
+              this.motorDirection = 'stop';
+              this.motorAction('stop');
+            })
+          );
+        })
+      )
+
+      .subscribe((v: any) => {
+        console.log(v);
+        this.motorAction(v);
+      });
+
+    this.subscriptions['joystick#move'] = this.start$
+      .pipe(
+        switchMap(() => {
+          return this.move$.pipe(
+            filter((v: any) => v.direction?.x),
+            map((v: any) => v.direction?.x),
+            distinctUntilChanged(),
+            takeUntil(this.stop$),
+            finalize(() => {
+              console.log('final');
+              this.motorDirection = 'stop';
+              this.motorAction1('stop');
+            })
+          );
+        })
+      )
+
+      .subscribe((v: any) => {
+        console.log(v);
+        this.motorAction1(v);
+      });
+    const video: HTMLVideoElement = this.video.nativeElement;
+    await this.setupCamera(video);
+    console.log(video.videoWidth, video.videoHeight);
+  }
+
+ 
+
+  private async setupCamera(video: HTMLVideoElement) {
+    if (!video) return null;
+    const setupResponse = await this.videoService.setupCamera(video, {
+      width: 1024,
+      height: 580,
+    });
+    this.webcam$Subscription = setupResponse;
+    this.videoState$.next(setupResponse.state);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      video.play();
+
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.recordedChunks.push(event.data);
+        }
+      };
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+    }
+  }
+
+  public startRecording() {
+    if (this.recording === false) {
+      this.recordedChunks = [];
+   
+      this.placee = 'Stop Recording';
+    } else {
+      this.mediaRecorder.stop();
+     'video/webm' });
+        const url = URL.createObjectURL(blob);
+
+        const downloadLink: HTMLAnchorElement = this.downloadLink.nativeElement;
+        downloadLink.href = url;
+        downloadLink.download = 'recording.webm';
+        downloadLink.click();
+
+        this.recordingStatus = 'Video downloaded!';
+      };
+      this.recording = false;
+      this.placee = 'Record';
+    }
+  }
+
+  // Stop recording and download the video
+  public stopRecording() {
+    this.mediaRecorder.stop();
+    this.recordingStatus = 'Recording stopped!'; // Update UI
+    console.log('Recording stopped...');
+
+    this.mediaRecorder.onstop = () => {
+      const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+
+      const downloadLink: HTMLAnchorElement = this.downloadLink.nativeElement;
+      downloadLink.href = url;
+      downloadLink.download = 'recording.webm';
+      downloadLink.click();
+
+      this.recordingStatus = 'Video downloaded!';
+    };
+  }
+
+  public async togglePlay(video: HTMLVideoElement) {
+    const state = await this.videoService.togglePlay(video);
+    this.videoState$.next(state);
+  }
+
+  fullScreen(enable = !this.isFullScreen) {
+    // window.close();
+   
+  }
+
+  closeWindow() {
+    window.close();
+  }
+
+  onStartStatic(event: JoystickEvent) {
+    this.interactingStatic = true;
+    this.start$.next(true);
+  }
+
+  onStartStatic1(event: JoystickEvent) {
+    this.interactingStatic1 = true;
+    this.start1$.next(true);
+  }
+
+  relaod() {
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 5; i++) {
+        this.ledMatrix[j][i] = 0;
+      }
+    }
+    this.fire = true;
+    this.initial = 0;
+  }
+
+  lock() {
+    // this.unlock = true;
+    // this.unlock = true ? false : false;
+    if (this.unlock == false) {
+      this.unlock = true;
+
+    } else {
+      this.unlock = false;
+      this.place = 'Unlock';
+      this.opac = 0;
+      this.opaci = 0;
+    }
+  }
+
+  onEndStatic(event: JoystickEvent) {
+    this.interactingStatic = false;
+    this.stop$.next(true);
+  }
+  onEndStatic1(event: JoystickEvent) {
+    this.interactingStatic1 = false;
+    this.stop1$.next(true);
+  }
+
+  onMoveStatic(event: JoystickEvent) {
+    this.staticOutputData = event.data;
+    // console.log(this.staticOutputData);
+    this.move$.next(this.staticOutputData);
+    // console.log(this.staticOutputData);
+  }
+  onMoveStatic1(event: JoystickEvent) {
+
+  }
+
+  set_angle() {
+    this.http.get(apiDomain + '/api/hello').subscribe({
+      next: (data: any) => {
+        this.message = data.message;
+        console.log(this.message);
+      },
+      error: (error: any) => {
+        console.error('Error calling API:', error);
+      },
+    });
+  }
+
+  keyboard() {
+    this.transp = 1;
+  }
+  zero() {
+    this.http.get(apiDomain + '/api/zero').subscribe({
+      next: (data: any) => {
+        this.message = data.message;
+        console.log(this.message);
+      },
+      error: (error: any) => {
+        console.error('Error calling API:', error);
+      },
+    });
+  }
+
+  setPin(ix: number, status: boolean) {
+    return firstValueFrom(
+      this.http.post(apiDomain + '/api/update-pin', {
+        pin: ix,
+        status,
+      })
+    );
+  }
+
+  async singleFire() {
+    // if(this.ledMatrix[Math.floor(this.initial / 5)][this.initial % 5] != 1){
+    await this.setPin(this.initial, true);
+    await wait(1000);
+    await this.setPin(this.initial, false);
+    this.ledMatrix[Math.floor(this.initial / 5)][this.initial % 5] = 1;
+
+    // }
+    this.initial++;
+
+    if (this.initial >= 16) {
+      this.initial = 0;
+      // for (let j = 0; j < 3; j++) {
+      //   for (let i = 0; i < 5; i++) {
+      //     this.ledMatrix[j][i] = 0;
+      //   }
+      // }
+      this.fire = false;
+    }
+  }
+
+ 
+
+  async multiFire(times: number) {
+    while (times-- > 0) {
+      if (this.unlock == true) {
+        if (
+          this.fire == true &&
+        
+        ) {
+          await this.singleFire();
+        } else {
+          times++;
+          this.initial++;
+        }
+
+        // else {
+        //   this.fire = true;
+        //   break;
+        // }
+      }
+    }
+  }
+
+  public ngOnDestroy() {
+    this.subscriptions.forEach((v) => v?.unsubscribe());
+
+    this.webcam$Subscription = undefined;
+  }
+}
